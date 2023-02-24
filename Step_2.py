@@ -7,7 +7,7 @@ from importlib import reload
 tree = ET.parse('full database.xml')
 root = tree.getroot()
 
-data = pd.read_json(r'base_output/drc_p1_pv2.json', orient='index', convert_axes=False, dtype=False)
+data = pd.read_json(r'drc_p1_pv2.json', orient='index', convert_axes=False, dtype=False)
 
 ##
 s = data.AllInteraction.str.contains('err1', regex=False)
@@ -56,8 +56,8 @@ data.update(err_data)
 s = data.AllInteraction.str.contains('err1', regex=False)
 err_data_leftover = data.loc[s].copy()
 ##
-filename = r'base_output/drc_p2_pv2.json'
+filename = r'drc_p2_pv2.json'
 data.to_json(filename,orient='index', force_ascii='False')
-filename = r'base_output/drc_p2_pv2.xlsx'
+filename = r'drc_p2_pv2.xlsx'
 data.to_excel(filename)
 

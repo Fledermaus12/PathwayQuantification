@@ -11,7 +11,7 @@ tree = ET.parse('full database.xml')
 root = tree.getroot()
 
 ##
-table = pd.read_excel("data/tbl_Medikation.xlsx")
+table = pd.read_excel("tbl_Medikation.xlsx")
 table = table.loc[:,['case_line_id','case_id','Z_Wirkstoff_Gesamt', 'Z_ATC_Gesamt']]
 table = table.set_index('case_line_id')
 
@@ -43,9 +43,9 @@ table['AllInteraction'] = output_list
 
 
 ## Speichern!
-filename = r'base_output/drc_p1_pv2.json'
+filename = r'drc_p1_pv2.json'
 table.to_json(filename,orient='index', force_ascii='False')
-filename = r'base_output/drc_p1_pv2.xlsx'
+filename = r'drc_p1_pv2.xlsx'
 table.to_excel(filename)
 
 

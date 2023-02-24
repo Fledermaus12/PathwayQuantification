@@ -1,7 +1,7 @@
 ##
 import pandas as pd
 
-data = pd.read_json(r'base_output/drc_p2_pv2.json', orient='index', convert_axes=False, dtype=False)
+data = pd.read_json(r'drc_p2_pv2.json', orient='index', convert_axes=False, dtype=False)
 
 
 def search(keyword, liste):
@@ -23,5 +23,5 @@ for i in enzymes:
     data[i] = search_result
 
 ##
-data.to_excel(r'evaluater_output/drc_p3eva.xlsx')
-data.to_json(r'evaluater_output/drc_p3eva.json',orient='index', force_ascii='False')
+data.to_excel(r'drc_p3eva.xlsx')
+data.to_json(r'drc_p3eva.json',orient='index', force_ascii='False')
