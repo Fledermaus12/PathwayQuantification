@@ -7,45 +7,87 @@ import xml.etree.ElementTree as ET
 import dbfunctions
 from importlib import reload
 #-----
-tree = ET.parse('full database.xml')
+tree = ET.parse('../full database.xml')
 root = tree.getroot()
 
 ##
-table = pd.read_excel("tbl_Medikation.xlsx")
-table = table.loc[:,['case_line_id','case_id','Z_Wirkstoff_Gesamt', 'Z_ATC_Gesamt']]
-table = table.set_index('case_line_id')
+table = pd.read_json('v11.11/manual_table_translated1.json')
+table = table[table['substances'] != 'error1']
+substances = table.substances
+substances
 
-# filtered the ones out without ATC, checked and proved
-err_table = table.loc[pd.isna(table['Z_ATC_Gesamt'])]
-#table.dropna(subset=['Z_ATC_Gesamt'], inplace=True)
 
-##
+# search in drugbank
 output_list = list()
-for index, row in table.iterrows():
-
+for entry in list(substances):
     output = list()
-    # ATC Feld darf nicht leer sein
-    if pd.isna(row['Z_ATC_Gesamt']) == False:
-        # Node des jeweiligen Medikaments finden und abspeichern
-        __, node_drug, single_error = dbfunctions.find_drug_root(row['Z_ATC_Gesamt'], root)
-    else: single_error == 1
+    print('------', entry)
+    entry = entry.capitalize()
+    node = dbfunctions.runit(entry, root)
 
-    if single_error == 0:
-        for elem in node_drug:
-            output_temp = dbfunctions.find_enzymes(elem, root)
-            output = output + output_temp
-        output = list(set(output))
+    if node == None:
+        output.append('error2')
     else:
-        output.append('err1')
+        out = dbfunctions.find_enzymes(node, root)
+        output = output + out
+    output = list(set(output)) # no doubles!
+
+    # if there is err in combination preperate, it is not usable
+    if 'error2' in output:
+        output = ['error2']
     output_list.append(output)
 
-table['AllInteraction'] = output_list
+check_error2 = pd.Series(output_list).value_counts()
+check_error2.to_excel('check_error2.xlsx')
+results = pd.DataFrame({
+    'substance': substances,
+    'interactions': output_list
+})
+results
+
 
 
 ## Speichern!
-filename = r'drc_p1_pv2.json'
-table.to_json(filename,orient='index', force_ascii='False')
-filename = r'drc_p1_pv2.xlsx'
-table.to_excel(filename)
+filename = r'db_results.json'
+results.to_json(filename,orient='index', force_ascii='False')
+filename = r'db_results.xlsx'
+results.to_excel(filename)
 
 
+
+
+
+# Make matrix 
+data = pd.read_json(r'db_results.json', orient='index', convert_axes=False, dtype=False)
+data
+
+def search(keyword, liste):
+    '''
+    :param keyword: the enzyme name, that has to be sorted out
+    :param liste: the list of the identified interactions
+    :return: a list with 1 & 0, which entry has shown a interaction with given enzyme (keyword)
+    '''
+    lkeyword = list()
+    for elem in liste:
+        if keyword in elem: lkeyword.append(1)
+        else: lkeyword.append(0)
+    return lkeyword
+enzymes = ['2d6sub', '2c19sub', '2c9sub', '3a4sub', '1a2sub']
+for i in enzymes:
+    search_result = search(i, list(data['interactions']))
+    data[i] = search_result
+data
+
+def classify(row):
+    if 'error2' in row['interactions']:
+        return 'not_classified'
+    else:
+        return 'classified'
+
+# Add the new column "classification" based on the "interactions" column
+data['db_classified'] = data.apply(classify, axis=1)
+
+##
+data.to_excel(r'v11.11/db_results_matrix.xlsx')
+data.to_json(r'v11.11/db_results_matrix.json',orient='index', force_ascii='False')
+data
